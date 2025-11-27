@@ -18,10 +18,10 @@ st.title("⚙️ Energy-Efficient CPU Scheduling Simulator")
 
 st.markdown("""
 This tool simulates classic CPU scheduling algorithms and a proposed **Energy-Efficient** scheduler.
-You can compare performance metrics such as **waiting time, turnaround time, CPU utilization, and energy usage**.
+Compare performance using **waiting time, turnaround time, response time, CPU utilization & energy**.
 """)
 
-# Sidebar Inputs
+# Sidebar
 st.sidebar.header("Simulation Settings")
 
 algo = st.sidebar.selectbox(
@@ -35,14 +35,9 @@ algo = st.sidebar.selectbox(
     ],
 )
 
-quantum = st.sidebar.number_input(
-    "Time Quantum (for RR / EE-RR)",
-    min_value=1,
-    max_value=10,
-    value=2,
-)
+quantum = st.sidebar.number_input("Time Quantum (used in RR / EE-RR)", min_value=1, max_value=10, value=2)
 
-st.sidebar.subheader("Processes Input")
+st.sidebar.subheader("Process Input")
 
 arrivals_str = st.sidebar.text_input("Arrival times", "0,2,4,5")
 bursts_str = st.sidebar.text_input("Burst times", "7,4,1,4")
@@ -54,7 +49,7 @@ compare_button = st.sidebar.button("Compare All Algorithms")
 def parse_list(text):
     return [int(x.strip()) for x in text.split(",")]
 
-# MAIN LOGIC
+# Process parsing
 if run_button or compare_button:
     arrivals = parse_list(arrivals_str)
     bursts = parse_list(bursts_str)
@@ -63,6 +58,7 @@ if run_button or compare_button:
     if len(arrivals) != len(bursts):
         st.error("Arrival and Burst count must match!")
         st.stop()
+
     if len(priorities) != len(arrivals):
         priorities = [1] * len(arrivals)
 
@@ -71,9 +67,9 @@ if run_button or compare_button:
         for i in range(len(arrivals))
     ]
 
-# ================================
-# INDIVIDUAL RUN MODE
-# ================================
+# --------------------------
+# INDIVIDUAL RUN
+# --------------------------
 if run_button:
     if algo == "FCFS":
         result = simulate_fcfs(processes)
@@ -96,6 +92,7 @@ if run_button:
     col5.metric("Total Energy", f"{result.total_energy:.2f} units")
 
     st.subheader("📍 Gantt Chart")
+
     fig, ax = plt.subplots(figsize=(10, 3))
     pids = sorted({e.pid for e in result.gantt if e.pid})
     pid_map = {p: i for i, p in enumerate(pids)}
@@ -103,8 +100,7 @@ if run_button:
     for entry in result.gantt:
         if entry.pid:
             ax.barh(pid_map[entry.pid], entry.end - entry.start, left=entry.start)
-            ax.text((entry.start + entry.end) / 2, pid_map[entry.pid], entry.pid,
-                    ha='center', va='center')
+            ax.text((entry.start + entry.end) / 2, pid_map[entry.pid], entry.pid, ha='center', va='center')
 
     ax.set_yticks(list(pid_map.values()))
     ax.set_yticklabels(pids)
@@ -112,9 +108,9 @@ if run_button:
     ax.grid(True)
     st.pyplot(fig)
 
-# ================================
+# --------------------------
 # COMPARISON MODE
-# ================================
+# --------------------------
 if compare_button:
     results = [
         simulate_fcfs(processes),
@@ -126,7 +122,6 @@ if compare_button:
 
     st.subheader("📊 Algorithm Performance Comparison")
 
-    # Build table
     data = {
         "Algorithm": [r.algorithm for r in results],
         "Avg Waiting Time": [round(r.avg_waiting_time, 2) for r in results],
@@ -135,19 +130,28 @@ if compare_button:
         "CPU Utilization (%)": [round(r.cpu_utilization, 2) for r in results],
         "Total Energy": [round(r.total_energy, 2) for r in results],
     }
+
     st.table(data)
 
-    # Identify winners
     best_turn = min(results, key=lambda r: r.avg_turnaround_time)
     best_energy = min(results, key=lambda r: r.total_energy)
 
     st.success(f"🏆 Fastest Algorithm (Min Turnaround Time): **{best_turn.algorithm}**")
-    st.success(f"⚡ Most Energy Efficient: **{best_energy.algorithm}**")
+    st.success(f"⚡ Most Energy Efficient Algorithm: **{best_energy.algorithm}**")
 
     st.subheader("⚡ Energy Usage Comparison")
-    fig, ax = plt.subplots()
-    ax.bar([r.algorithm for r in results], [r.total_energy for r in results])
+
+    fig, ax = plt.subplots(figsize=(11, 5))
+    algos = [r.algorithm for r in results]
+    energy = [r.total_energy for r in results]
+
+    ax.bar(algos, energy)
     ax.set_ylabel("Energy (units)")
     ax.set_xlabel("Algorithm")
     ax.set_title("Energy Consumption Comparison")
+
+    # ⭐ FIX: Rotate long labels & adjust spacing
+    plt.xticks(rotation=30, ha='right')
+    fig.tight_layout()
+
     st.pyplot(fig)
