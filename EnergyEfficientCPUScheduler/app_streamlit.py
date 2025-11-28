@@ -149,7 +149,7 @@ if compare_button:
     ax.set_ylabel("Energy (units)")
     ax.set_xlabel("Algorithm")
     ax.set_title("Energy Consumption Comparison")
-
+# hello
     # ⭐ FIX: Rotate long labels & adjust spacing
     plt.xticks(rotation=30, ha='right')
     fig.tight_layout()
